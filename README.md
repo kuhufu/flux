@@ -16,6 +16,7 @@ func Of(c ...interface{}) Flux
 ```go
 func (f Flux) Filter(filter Filter) Flux
 func (f Flux) Map(m Map) Flux
+func (f Flux) FilterMap(fm FilterMapFunc) Flux
 func (f Flux) Parallel(args ...int) Flux
 ```
 
@@ -81,6 +82,25 @@ Of(1, 2, 3)
 返回值是 flux
 
 流方法的并发度至少为1，即使你通过Parallel方法调整
+##### FilterMap
+
+同时做Filter和Map操作，第二个返回值为false时，会被过滤。
+
+```go
+FilterMap(func(e interface{}) (interface{}, bool) {
+    id := e.(int)
+    data, err := c.Get("/v1/idol/forumdetail?id=" + strconv.Itoa(id)).String()
+    if err != nil {
+        log.Println(err)
+        return nil, false
+    }
+    if gjson.Parse(data).Get("error").Exists() {
+        return nil, false
+    }
+    return data, true
+})
+```
+
 ##### Parallel
 
 Parallel方法调整并发度，从下一个方法开始生效。**当Parallel无参时，并发度将自动设置为 cpu 核心数**
