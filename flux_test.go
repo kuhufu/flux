@@ -7,7 +7,7 @@ import (
 )
 
 func TestRangeFlux_Range(t *testing.T) {
-	Range(1, 10).Parallel(2).
+	Range(1, 10).Parallel().
 		Filter(func(e interface{}) bool {
 			return e.(int)%2 == 1
 		}).
@@ -19,10 +19,5 @@ func TestRangeFlux_Range(t *testing.T) {
 			fmt.Printf("%v ", e)
 		})
 
-	go func() {
-		print("test")
-		//fmt.Println("test \\n")
-	}()
-	fmt.Println("换行")
 	time.Sleep(time.Second * 3)
 }

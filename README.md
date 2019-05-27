@@ -16,7 +16,7 @@ func Of(c ...interface{}) Flux
 ```go
 func (f Flux) Filter(filter Filter) Flux
 func (f Flux) Map(m Map) Flux
-func (f Flux) Parallel(concurrentNum int) Flux
+func (f Flux) Parallel(args ...int) Flux
 ```
 
 
@@ -83,11 +83,11 @@ Of(1, 2, 3)
 流方法的并发度至少为1，即使你通过Parallel方法调整
 ##### Parallel
 
-Parallel方法调整并发度，从下一个方法开始生效。
+Parallel方法调整并发度，从下一个方法开始生效。**当Parallel无参时，并发度将自动设置为 cpu 核心数**
 
 ```go
 Range(1, 10).
-	Parallel(2).
+	Parallel().
 	Filter(func(e interface{}) bool {
         return e.(int) % 2 == 1
 	}).
