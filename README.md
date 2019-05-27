@@ -14,8 +14,8 @@ func Of(c ...interface{}) Flux
 流方法
 
 ```go
-func (f Flux) Filter(filter Filter) Flux
-func (f Flux) Map(m Map) Flux
+func (f Flux) Filter(filter FilterFunc) Flux
+func (f Flux) Map(m MapFunc) Flux
 func (f Flux) FilterMap(fm FilterMapFunc) Flux
 func (f Flux) Parallel(args ...int) Flux
 ```
@@ -25,7 +25,7 @@ func (f Flux) Parallel(args ...int) Flux
 终止方法
 
 ```go
-func (f Flux) ForEach(each ForEach)
+func (f Flux) ForEach(each ForEachFunc)
 func (f Flux) ToSlice() []interface{}
 func (f Flux) ToChan(args ...chan interface{}) <-chan interface{}
 func (f Flux) Count() int
