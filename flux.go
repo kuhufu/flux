@@ -10,9 +10,10 @@ type Flux struct {
 	concurrentNum int
 }
 
-type Filter func(e interface{}) bool
-type ForEach func(e interface{})
-type Map func(e interface{}) interface{}
+type FilterFunc func(e interface{}) bool
+type ForEachFunc func(e interface{})
+type MapFunc func(e interface{}) interface{}
+type FilterMapFunc func(e interface{}) (interface{}, bool)
 
 func newFlux(c chan interface{}, concurrentNum int) Flux {
 	return Flux{
@@ -22,7 +23,7 @@ func newFlux(c chan interface{}, concurrentNum int) Flux {
 }
 
 func Range(begin, end int) Flux {
-	next := make(chan interface{}, 1)
+	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for i := begin; i < end; i++ {
 			next <- i
@@ -33,7 +34,7 @@ func Range(begin, end int) Flux {
 }
 
 func Chan(c chan interface{}) Flux {
-	next := make(chan interface{}, 1)
+	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for e := range c {
 			next <- e
@@ -45,7 +46,7 @@ func Chan(c chan interface{}) Flux {
 }
 
 func Slice(c []interface{}) Flux {
-	next := make(chan interface{}, 1)
+	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for _, e := range c {
 			next <- e
@@ -57,7 +58,7 @@ func Slice(c []interface{}) Flux {
 }
 
 func Of(c ...interface{}) Flux {
-	next := make(chan interface{}, 1)
+	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for _, e := range c {
 			next <- e
@@ -68,12 +69,12 @@ func Of(c ...interface{}) Flux {
 	return newFlux(next, 1)
 }
 
-func (f Flux) Filter(filter Filter) Flux {
+func (f Flux) Filter(filter FilterFunc) Flux {
 	num := f.concurrentNum
 	if num == 0 {
 		num = 1
 	}
-	next := make(chan interface{}, num)
+	next := make(chan interface{}, num*2)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(num)
@@ -94,7 +95,32 @@ func (f Flux) Filter(filter Filter) Flux {
 	return newFlux(next, f.concurrentNum)
 }
 
-func (f Flux) Map(m Map) Flux {
+func (f Flux) Map(m MapFunc) Flux {
+	num := f.concurrentNum
+	if num == 0 {
+		num = 1
+	}
+	next := make(chan interface{}, num*2)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(num)
+	for i := 0; i < num; i++ {
+		go func() {
+			for e := range f.c {
+				next <- m(e)
+			}
+			wg.Done()
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(next)
+	}()
+	return newFlux(next, f.concurrentNum)
+}
+
+//FilterMap 同时做filter 和 map 操作
+func (f Flux) FilterMap(fm FilterMapFunc) Flux {
 	num := f.concurrentNum
 	if num == 0 {
 		num = 1
@@ -106,7 +132,10 @@ func (f Flux) Map(m Map) Flux {
 	for i := 0; i < num; i++ {
 		go func() {
 			for e := range f.c {
-				next <- m(e)
+				//当 ok == true 时，接受该元素
+				if v, ok := fm(e); ok {
+					next <- v
+				}
 			}
 			wg.Done()
 		}()
@@ -134,7 +163,7 @@ func (f Flux) Parallel(args ...int) Flux {
 //------------------------------------------------
 //以下为终止方法
 
-func (f Flux) ForEach(each ForEach) {
+func (f Flux) ForEach(each ForEachFunc) {
 	if f.concurrentNum == 0 {
 		for e := range f.c {
 			each(e)
