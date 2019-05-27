@@ -1,6 +1,9 @@
 package flux
 
-import "sync"
+import (
+	"runtime"
+	"sync"
+)
 
 type Flux struct {
 	c             chan interface{}
@@ -116,7 +119,11 @@ func (f Flux) Map(m Map) Flux {
 }
 
 //调整并发度，下一个方法生效，非终止方法的并发度至少为1，
-func (f Flux) Parallel(concurrentNum int) Flux {
+func (f Flux) Parallel(args ...int) Flux {
+	concurrentNum := runtime.NumCPU()
+	if len(args) > 0 {
+		concurrentNum = args[0]
+	}
 	if concurrentNum < 0 {
 		concurrentNum = 0
 	}
