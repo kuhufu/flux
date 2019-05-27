@@ -70,8 +70,6 @@ Range(1, 10).
 
 创建一个 flux
 
-源方法的并发度至少为1，即使你通过Parallel方法调整
-
 ```go
 Range(1, 4)	//区间[1, 4)
 Slice([]interface{}{1, 2, 3})
