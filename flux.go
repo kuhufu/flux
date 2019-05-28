@@ -190,8 +190,8 @@ func (f flux) ToSlice() []interface{} {
 
 func (f flux) ToChan(args ...chan interface{}) <-chan interface{} {
 	var res chan interface{}
-	if len(args) > 0 {
-		res = args[0]
+	if len(args) == 0 {
+		return f.c
 	} else {
 		res = make(chan interface{}, 0)
 	}
