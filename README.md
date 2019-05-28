@@ -89,12 +89,8 @@ Of(1, 2, 3)
 ```go
 FilterMap(func(e interface{}) (interface{}, bool) {
     id := e.(int)
-    data, err := c.Get("/v1/idol/forumdetail?id=" + strconv.Itoa(id)).String()
+    data, err := flyhttp.Get("http://example.com").String()
     if err != nil {
-        log.Println(err)
-        return nil, false
-    }
-    if gjson.Parse(data).Get("error").Exists() {
         return nil, false
     }
     return data, true
@@ -107,7 +103,7 @@ Parallel方法调整并发度，从下一个方法开始生效。**当Parallel�
 
 ```go
 Range(1, 10).
-	Parallel().
+	Parallel(2).
 	Filter(func(e interface{}) bool {
         return e.(int) % 2 == 1
 	}).
