@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type Flux struct {
+type flux struct {
 	c             chan interface{}
 	concurrentNum int
 }
@@ -15,14 +15,14 @@ type ForEachFunc func(e interface{})
 type MapFunc func(e interface{}) interface{}
 type FilterMapFunc func(e interface{}) (interface{}, bool)
 
-func newFlux(c chan interface{}, concurrentNum int) Flux {
-	return Flux{
+func newFlux(c chan interface{}, concurrentNum int) flux {
+	return flux{
 		concurrentNum: concurrentNum,
 		c:             c,
 	}
 }
 
-func Range(begin, end int) Flux {
+func Range(begin, end int) flux {
 	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for i := begin; i < end; i++ {
@@ -33,7 +33,7 @@ func Range(begin, end int) Flux {
 	return newFlux(next, 1)
 }
 
-func Chan(c chan interface{}) Flux {
+func Chan(c chan interface{}) flux {
 	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for e := range c {
@@ -45,7 +45,7 @@ func Chan(c chan interface{}) Flux {
 	return newFlux(next, 1)
 }
 
-func Slice(c []interface{}) Flux {
+func Slice(c []interface{}) flux {
 	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for _, e := range c {
@@ -57,7 +57,7 @@ func Slice(c []interface{}) Flux {
 	return newFlux(next, 1)
 }
 
-func Of(c ...interface{}) Flux {
+func Of(c ...interface{}) flux {
 	next := make(chan interface{}, runtime.NumCPU()*2)
 	go func() {
 		for _, e := range c {
@@ -69,7 +69,7 @@ func Of(c ...interface{}) Flux {
 	return newFlux(next, 1)
 }
 
-func (f Flux) Filter(filter FilterFunc) Flux {
+func (f flux) Filter(filter FilterFunc) flux {
 	num := f.concurrentNum
 	if num == 0 {
 		num = 1
@@ -95,7 +95,7 @@ func (f Flux) Filter(filter FilterFunc) Flux {
 	return newFlux(next, f.concurrentNum)
 }
 
-func (f Flux) Map(m MapFunc) Flux {
+func (f flux) Map(m MapFunc) flux {
 	num := f.concurrentNum
 	if num == 0 {
 		num = 1
@@ -120,7 +120,7 @@ func (f Flux) Map(m MapFunc) Flux {
 }
 
 //FilterMap 同时做filter 和 map 操作
-func (f Flux) FilterMap(fm FilterMapFunc) Flux {
+func (f flux) FilterMap(fm FilterMapFunc) flux {
 	num := f.concurrentNum
 	if num == 0 {
 		num = 1
@@ -148,7 +148,7 @@ func (f Flux) FilterMap(fm FilterMapFunc) Flux {
 }
 
 //调整并发度，下一个方法生效，非终止方法的并发度至少为1，
-func (f Flux) Parallel(args ...int) Flux {
+func (f flux) Parallel(args ...int) flux {
 	concurrentNum := runtime.NumCPU()
 	if len(args) > 0 {
 		concurrentNum = args[0]
@@ -163,7 +163,7 @@ func (f Flux) Parallel(args ...int) Flux {
 //------------------------------------------------
 //以下为终止方法
 
-func (f Flux) ForEach(each ForEachFunc) {
+func (f flux) ForEach(each ForEachFunc) {
 	if f.concurrentNum == 0 {
 		for e := range f.c {
 			each(e)
@@ -179,7 +179,7 @@ func (f Flux) ForEach(each ForEachFunc) {
 	}
 }
 
-func (f Flux) ToSlice() []interface{} {
+func (f flux) ToSlice() []interface{} {
 	arr := make([]interface{}, 0, 16)
 	for e := range f.c {
 		arr = append(arr, e)
@@ -188,7 +188,7 @@ func (f Flux) ToSlice() []interface{} {
 	return arr
 }
 
-func (f Flux) ToChan(args ...chan interface{}) <-chan interface{} {
+func (f flux) ToChan(args ...chan interface{}) <-chan interface{} {
 	var res chan interface{}
 	if len(args) > 0 {
 		res = args[0]
@@ -204,7 +204,7 @@ func (f Flux) ToChan(args ...chan interface{}) <-chan interface{} {
 	return res
 }
 
-func (f Flux) Count() int {
+func (f flux) Count() int {
 	count := 0
 	for range f.c {
 		count += 1
