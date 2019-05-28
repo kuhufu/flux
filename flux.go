@@ -206,7 +206,7 @@ func (f Flux) ToChan(args ...chan interface{}) <-chan interface{} {
 
 func (f Flux) Count() int {
 	count := 0
-	for = range f.c {
+	for range f.c {
 		count += 1
 	}
 	return count
