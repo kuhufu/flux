@@ -125,7 +125,7 @@ func (f Flux) FilterMap(fm FilterMapFunc) Flux {
 	if num == 0 {
 		num = 1
 	}
-	next := make(chan interface{}, num)
+	next := make(chan interface{}, num*2)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(num)
@@ -206,7 +206,7 @@ func (f Flux) ToChan(args ...chan interface{}) <-chan interface{} {
 
 func (f Flux) Count() int {
 	count := 0
-	for _ = range f.c {
+	for = range f.c {
 		count += 1
 	}
 	return count
